@@ -1,10 +1,59 @@
-import { Badge, Box, Flex, Text } from "@chakra-ui/react";
+import { Badge, Box, Flex, Text, Spinner } from "@chakra-ui/react";
 import { FaCheckCircle } from "react-icons/fa";
 import { MdDelete } from "react-icons/md";
+import type { Todo } from "./TodoList";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { BASE_URL } from "../App";
 
-const TodoItem = ({ todo }: { todo: any }) => {
+const TodoItem = ({ todo }: { todo: Todo }) => {
+    const queryClient = useQueryClient();
+    const mutation = useMutation({
+        mutationKey: ['updateTodo'],
+        mutationFn: async () => {
+            if (todo.completed) {
+                return alert("Task already completed");
+            }
+            try {
+                const res = await fetch(`${BASE_URL}/todos/${todo._id}`, { method: 'PATCH' })
+                const data = await res.json()
+                if (!res.ok) {
+                    throw new Error(data.message)
+                }
+                if (!data.success) {
+                    throw new Error(data.message)
+                }
+                return data.data
+            } catch (err) {
+                console.log(err)
+            }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['todos'] });
+        },
+    })
+    const deleteMutation = useMutation({
+        mutationKey: ['deleteTodo'],
+        mutationFn: async () => {
+            try {
+                const res = await fetch(`${BASE_URL}/todos/${todo._id}`, { method: 'DELETE' })
+                const data = await res.json()
+                if (!res.ok) {
+                    throw new Error(data.message)
+                }
+                if (!data.success) {
+                    throw new Error(data.message)
+                }
+                return data.data
+            } catch (err) {
+                console.log(err)
+            }
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['todos'] });
+        },
+    })
     return (
-        <Flex gap={2} alignItems={"center"}>
+        <Flex gap={2} alignItems={"center"} >
             <Flex
                 flex={1}
                 alignItems={"center"}
@@ -32,14 +81,16 @@ const TodoItem = ({ todo }: { todo: any }) => {
                 )}
             </Flex>
             <Flex gap={2} alignItems={"center"}>
-                <Box color={"green.500"} cursor={"pointer"}>
-                    <FaCheckCircle size={20} />
+                <Box color={"green.500"} cursor={"pointer"} onClick={() => mutation.mutate()}>
+                    {!mutation.isPending && <FaCheckCircle size={20} />}
+                    {mutation.isPending && <Spinner size={"sm"} />}
                 </Box>
-                <Box color={"red.500"} cursor={"pointer"}>
-                    <MdDelete size={25} />
+                <Box color={"red.500"} cursor={"pointer"} onClick={() => deleteMutation.mutate()}>
+                    {!deleteMutation.isPending && <MdDelete size={25} />}
+                    {deleteMutation.isPending && <Spinner size={"sm"} />}
                 </Box>
             </Flex>
-        </Flex>
+        </Flex >
     );
 };
 export default TodoItem;

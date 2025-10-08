@@ -55,6 +55,9 @@ func main() {
 	app.Patch("/api/todos/:id", updateTodo)
 	app.Delete("/api/todos/:id", deleteTodo)
 
+	if os.Getenv("ENV") == "production" {
+		app.Static("/", "./client/dist")
+	}
 	err = app.Listen(":" + os.Getenv("PORT"))
 	if err != nil {
 		log.Fatalln(err)
