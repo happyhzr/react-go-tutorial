@@ -47,8 +47,7 @@ const TodoForm = () => {
                     type='text'
                     value={newTodo}
                     onChange={(e) => setNewTodo(e.target.value)}
-                    ref={(input) => input && input.focus()}
-                />
+                    ref={(input) => { if (input) input.focus(); }} />
                 <Button
                     mx={2}
                     type='submit'
